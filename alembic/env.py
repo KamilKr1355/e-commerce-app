@@ -5,7 +5,10 @@ from sqlalchemy import pool
 
 from alembic import context
 from src.database import Base
-from models import *
+from src.users.models import User, Addresses
+from src.products.models import Product, Category, ProductImage
+from src.shopping.models import Cart, CartItem, Order, OrderItem
+from src.logistics.models import Payment, Shipment, WebhookEvent
 import os
 from dotenv import load_dotenv
 
