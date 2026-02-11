@@ -11,6 +11,7 @@ from src.auth.authenticate import get_user, authenticate_user
 from src.auth.hasher import get_password_hash
 from src.auth.token import create_access_token
 from src.users.models import User
+from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 
 router = APIRouter(prefix="/user", tags=["users"])
@@ -39,19 +40,19 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    if not db.query(User).filter(User.email == request.email).first():
+def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    if not db.query(User).filter(User.email == request.username).first():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User with that e-mail doesn't exist",
         )
 
-    if not authenticate_user(db, request.email, request.password):
+    if not authenticate_user(db, request.username, request.password):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Wrong e-mail or password"
         )
 
-    user = db.query(User).filter(User.email == request.email).first()
+    user = db.query(User).filter(User.email == request.username).first()
 
     token_data = {"sub": str(user.id), "role": user.role.value}
 
