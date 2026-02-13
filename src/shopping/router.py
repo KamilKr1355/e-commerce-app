@@ -130,7 +130,7 @@ def increment_quantity(
 ):
     data = request.model_dump()
     product_id = data["product_id"]
-    
+
     new_cart_item = increase_quantity(db, product_id, current_user.id)
 
     if not new_cart_item:

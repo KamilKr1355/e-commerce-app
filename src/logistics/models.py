@@ -20,6 +20,7 @@ from src.logistics.constants import (
 )
 from sqlalchemy.orm import relationship
 
+
 class Payment(Base):
     __tablename__ = "payment"
 
@@ -34,6 +35,7 @@ class Payment(Base):
     created_at = Column(DateTime, nullable=False, server_default=text("now()"))
 
     order = relationship("Order", back_populates="payment")
+
 
 class Shipment(Base):
     __tablename__ = "shipment"

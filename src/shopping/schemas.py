@@ -68,12 +68,15 @@ class OrderOut(OrderBase):
     currency: str = Field(min_length=2, max_length=5)
     created_at: datetime
     items: List[OrderItemOut]
-    
+
+
 class Status(BaseModel):
-  status: str
-  
+    status: str
+
+
 class IncrementDecrement(BaseModel):
-  product_id: int
+    product_id: int
+
 
 class OrderStatus(BaseModel):
-  status: OrderStatus
+    status: OrderStatus
