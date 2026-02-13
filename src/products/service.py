@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
-from src.products.models import Category
-from src.products.schemas import CategoryCreate, CategoryUpdate
+from src.products.models import Category, Product, ProductImage
+from src.products.schemas import CategoryCreate, CategoryUpdate, ProductCreate, ProductUpdate, ProductImageCreate, ProductImageEdit
 
 #categoryout
 def get_list_of_categories(db: Session):
@@ -43,4 +43,87 @@ def delete_category(db: Session, id: int):
   db.delete(db_category)
   db.commit()
   return db_category
+
+def get_all_products(db: Session):
+  return db.query(Product).options(joinedload(Product.images)).all()
+
+def get_all_products_from_category(db: Session, category_id):
+  return db.query(Product).options(joinedload(Product.images)).filter(Product.category_id == category_id).all()
+
+def get_single_product(db: Session, product_id):
+  return db.query(Product).options(joinedload(Product.images)).filter(Product.id == product_id).one()
+
+def create_product(db: Session, new_product: ProductCreate):
+  db_product = Product(**new_product.model_dump())
+  db.add(db_product)
+  db.commit()
+  db.refresh(db_product)
+  return db_product
+
+def update_product(db: Session, product_id: int, updated_product: ProductUpdate):
+  db_product = db.query(Product).filter(Product.id == product_id).one()
+  if not db_product:
+    return None
+  
+  for key, value in updated_product.model_dump().items():
+    setattr(db_product, key, value)
+    
+  db.commit()
+  db.refresh(db_product)
+  
+  return db_product
+
+def delete_product(db: Session, product_id: int):
+  db_product = db.query(Product).filter(Product.id == product_id).one()
+  
+  if not db_product:
+    return None
+
+  db.delete(db_product)
+  db.commit()  
+  return db_product
+
+def get_all_product_images_for_product(product_id: int, db: Session):
+  return db.query(ProductImage).filter(ProductImage.product_id == product_id).all()
+
+def delete_product_image(id: int, db: Session):
+  db_image = db.query(ProductImage).filter(ProductImage.id == id).one()
+  
+  if not db_image:
+    return None
+  
+  image_data = {"url": db_image.url} 
+  
+  db.delete(db_image)
+  db.commit()
+  return image_data
+
+def create_product_image(image: ProductImageCreate, db: Session):
+  if image.is_main:
+        db.query(ProductImage).filter(ProductImage.product_id == image.product_id).update({"is_main": False})
+        
+  db_image = ProductImage(**image.model_dump())
+  db.add(db_image)
+  db.commit()
+  db.refresh(db_image)
+  return db_image
+
+def edit_product_image(db: Session, image_id: int, image_data: ProductImageEdit):
+  db_image = db.query(ProductImage).filter(ProductImage.id == image_id).first()
+  
+  if not db_image:
+    return None
+
+  if image_data.is_main:
+        db.query(ProductImage).filter(
+            ProductImage.product_id == db_image.product_id, 
+            ProductImage.id != image_id
+        ).update({"is_main": False})
+
+  db_image.is_main = image_data.is_main
+    
+  db.commit()
+  db.refresh(db_image)
+  return db_image
+  
   
