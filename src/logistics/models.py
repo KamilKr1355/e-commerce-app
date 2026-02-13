@@ -18,7 +18,7 @@ from src.logistics.constants import (
     Courier,
     DeliveryType,
 )
-
+from sqlalchemy.orm import relationship
 
 class Payment(Base):
     __tablename__ = "payment"
@@ -26,13 +26,14 @@ class Payment(Base):
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey("order.id"))
     provider = Column(Enum(Providers), nullable=False, default=Providers.stripe)
-    payment_method = Column(Enum(PaymentMethod), nullable=False)
+    payment_method = Column(Enum(PaymentMethod), nullable=True)
     status = Column(Enum(Status), nullable=False, default=Status.pending)
     provider_payment_id = Column(String, nullable=False)
-    amount = Column(Numeric(10, 2), nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False, default=0)
     currency = Column(String(5), nullable=False, default="PLN")
     created_at = Column(DateTime, nullable=False, server_default=text("now()"))
 
+    order = relationship("Order", back_populates="payment")
 
 class Shipment(Base):
     __tablename__ = "shipment"
@@ -46,7 +47,7 @@ class Shipment(Base):
     pickup_point_name = Column(String, nullable=True)
     pickup_point_address = Column(String, nullable=True)
 
-    tracking_number = Column(String, nullable=False)
+    tracking_number = Column(String, nullable=True)
 
     shipping_full_name = Column(String, nullable=False)
     shipping_street = Column(String, nullable=False)

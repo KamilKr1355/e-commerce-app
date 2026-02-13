@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from src.users.router import router as userRouter
 from src.products.router import router as productRouter
 from src.shopping.router import router as shoppingRouter
+from src.logistics.router import router as logisticsRouter
 from src.database import engine, Base
 import src.shopping.models
 import src.products.models
@@ -14,3 +15,4 @@ app = FastAPI(title="E-commerce app")
 app.include_router(router=userRouter)
 app.include_router(router=productRouter)
 app.include_router(router=shoppingRouter)
+app.include_router(router=logisticsRouter)

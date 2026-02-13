@@ -5,3 +5,4 @@ alembic
 uvicorn
 pwdlib[argon2]
 PyJWT
+stripe
