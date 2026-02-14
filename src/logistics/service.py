@@ -1,12 +1,16 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from src.logistics.schemas import PaymentCreate, ShipmentCreate, WebhookCreate
-from src.shopping.models import Order
+from src.shopping.models import Order, OrderItem
 from src.logistics.models import Payment, Shipment, WebhookEvent
-from src.logistics.constants import Providers, PaymentMethod, Status
+from src.logistics.constants import Providers, PaymentMethod, Status, Courier,CourierPrice
 from src.shopping.constants import OrderStatus
 from datetime import datetime
 from src.logistics.stripe import create_checkout_session
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def initiate_payment(db: Session, payment_data: PaymentCreate, user_id: int):
@@ -77,8 +81,14 @@ def payment_failed(db: Session, provider_payment_id: str):
     db.refresh(db_payment)
     return db_payment
 
+def get_paid_shippments(db: Session, date: datetime, limit: int):
+    return (
+        db.query(Shipment).join(Order).options(joinedload(Shipment.order).joinedload(Order.items).joinedload(OrderItem.product))
+        .filter(Order.status == OrderStatus.paid, Order.updated_at > date)
+        .order_by(Order.updated_at.asc()).limit(limit)
+        .all()  
+    )
 
-# todo interaction with different couruers (tracking_number = Column(String, nullable=True))
 def create_shipment(db: Session, shipment_data: ShipmentCreate):
     order = db.query(Order).filter(Order.id == shipment_data.order_id).first()
 
@@ -86,6 +96,23 @@ def create_shipment(db: Session, shipment_data: ShipmentCreate):
         return None
 
     db_shipment = Shipment(**shipment_data.model_dump())
+    
+    match db_shipment.courier:
+        case Courier.inpost:
+            db_shipment.order.total_amount += CourierPrice.inpost
+        case Courier.inpost_paczkomat:
+            db_shipment.order.total_amount += CourierPrice.inpost_paczkomat
+        case Courier.dhl:
+            db_shipment.order.total_amount += CourierPrice.dhl
+        case Courier.dhl_paczkomat:
+            db_shipment.order.total_amount += CourierPrice.dhl_paczkomat
+        case Courier.dpd:
+            db_shipment.order.total_amount += CourierPrice.dpd
+        case Courier.orlen:
+            db_shipment.order.total_amount += CourierPrice.orlen
+        case _:
+            pass
+        
     db.add(db_shipment)
     db.commit()
     db.refresh(db_shipment)

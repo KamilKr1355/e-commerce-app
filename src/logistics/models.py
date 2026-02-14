@@ -41,7 +41,7 @@ class Shipment(Base):
     __tablename__ = "shipment"
 
     id = Column(Integer, primary_key=True)
-    order_id = Column(Integer, ForeignKey("order.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("order.id"), nullable=False, unique=True)
     courier = Column(Enum(Courier), nullable=False)
     delivery_type = Column(Enum(DeliveryType), nullable=False)
 
@@ -52,15 +52,21 @@ class Shipment(Base):
     tracking_number = Column(String, nullable=True)
 
     shipping_full_name = Column(String, nullable=False)
+    shipping_email = Column(String, nullable=False)
     shipping_street = Column(String, nullable=False)
     shipping_city = Column(String, nullable=False)
     shipping_postal_code = Column(String, nullable=False)
     shipping_country = Column(String, nullable=False)
     shipping_phone = Column(String, nullable=False)
+    shipping_company = Column(String, nullable=True)
+    comment = Column(String, nullable=True)
+    nip = Column(String, nullable=True)
 
     status = Column(Enum(Status), nullable=False, default=Status.pending)
     shipped_at = Column(DateTime)
     delivered_at = Column(DateTime)
+    
+    order = relationship("Order", back_populates="shipment", uselist=False)
 
 
 class WebhookEvent(Base):

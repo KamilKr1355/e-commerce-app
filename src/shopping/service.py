@@ -186,7 +186,6 @@ def get_users_orders(db: Session, user_id: int):
         .all()
     )
 
-
 def get_order_by_id(db: Session, order_id: int, user_id: int):
     return (
         db.query(Order)

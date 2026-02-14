@@ -51,13 +51,15 @@ class Order(Base):
     total_amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(5), nullable=False, default="PLN")
     created_at = Column(DateTime, nullable=False, server_default=text("now()"))
+    updated_at = Column(DateTime, nullable=False, server_default=text("now()"), onupdate=text("now()"))
+    shipping_cost = Column(Numeric(10, 2), nullable=True, default=15.00)
 
     user = relationship("User", back_populates="orders")
     items = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
     payment = relationship("Payment", back_populates="order", uselist=False)
-
+    shipment = relationship("Shipment", back_populates="order", uselist=False)
 
 class OrderItem(Base):
     __tablename__ = "order_item"
