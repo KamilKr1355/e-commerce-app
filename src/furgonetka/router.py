@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header, Depends, Request, status, HTTPException
+from fastapi import APIRouter, Header, Depends, Request, status, HTTPException, Response
 from src.dependencies import get_db
 from sqlalchemy.orm import Session
 from src.furgonetka.service import get_orders, order_status
@@ -27,7 +27,7 @@ def get_every_order(
     if not orders:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    return orders
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post("/orders/{id}/tracking_number", status_code=status.HTTP_200_OK)
@@ -41,7 +41,7 @@ def order_tracking(request: Tracking, id: int, db: Session = Depends(get_db)):
     elif not shipment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    return {"success": True}
+    return Response(status_code=status.HTTP_200_OK)
   
 @router.post("/webhooks/furgonetka")
 async def furgonetka_webhook(payload: FurgonetkaWebhookPayload, db: Session = Depends(get_db)):
