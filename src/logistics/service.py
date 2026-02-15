@@ -3,7 +3,13 @@ from sqlalchemy.orm import Session, joinedload
 from src.logistics.schemas import PaymentCreate, ShipmentCreate, WebhookCreate
 from src.shopping.models import Order, OrderItem
 from src.logistics.models import Payment, Shipment, WebhookEvent
-from src.logistics.constants import Providers, PaymentMethod, Status, Courier,CourierPrice
+from src.logistics.constants import (
+    Providers,
+    PaymentMethod,
+    Status,
+    Courier,
+    CourierPrice,
+)
 from src.shopping.constants import OrderStatus
 from datetime import datetime
 from src.logistics.stripe import create_checkout_session
@@ -81,13 +87,22 @@ def payment_failed(db: Session, provider_payment_id: str):
     db.refresh(db_payment)
     return db_payment
 
+
 def get_paid_shippments(db: Session, date: datetime, limit: int):
     return (
-        db.query(Shipment).join(Order).options(joinedload(Shipment.order).joinedload(Order.items).joinedload(OrderItem.product))
+        db.query(Shipment)
+        .join(Order)
+        .options(
+            joinedload(Shipment.order)
+            .joinedload(Order.items)
+            .joinedload(OrderItem.product)
+        )
         .filter(Order.status == OrderStatus.paid, Order.created_at > date)
-        .order_by(Order.created_at.asc()).limit(limit)
-        .all()  
+        .order_by(Order.created_at.asc())
+        .limit(limit)
+        .all()
     )
+
 
 def create_shipment(db: Session, shipment_data: ShipmentCreate):
     order = db.query(Order).filter(Order.id == shipment_data.order_id).first()
@@ -96,7 +111,7 @@ def create_shipment(db: Session, shipment_data: ShipmentCreate):
         return None
 
     db_shipment = Shipment(**shipment_data.model_dump())
-    
+
     match db_shipment.courier:
         case Courier.inpost:
             db_shipment.order.total_amount += CourierPrice.inpost
@@ -112,7 +127,7 @@ def create_shipment(db: Session, shipment_data: ShipmentCreate):
             db_shipment.order.total_amount += CourierPrice.orlen
         case _:
             pass
-        
+
     db.add(db_shipment)
     db.commit()
     db.refresh(db_shipment)

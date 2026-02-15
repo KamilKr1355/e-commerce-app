@@ -65,7 +65,7 @@ class Shipment(Base):
     status = Column(Enum(Status), nullable=False, default=Status.pending)
     shipped_at = Column(DateTime)
     delivered_at = Column(DateTime)
-    
+
     order = relationship("Order", back_populates="shipment", uselist=False)
 
 

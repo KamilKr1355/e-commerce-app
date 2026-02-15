@@ -82,12 +82,13 @@ class IncrementDecrement(BaseModel):
 class OrderStatus(BaseModel):
     status: OrderStatus
 
+
 class GuestOrderItem(BaseModel):
     product_id: int
     quantity: int
-    
+
+
 class GuestOrder(BaseModel):
     email: EmailStr
     items: List[GuestOrderItem]
     shipping_data: ShipmentCreate
-    

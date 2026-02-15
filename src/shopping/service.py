@@ -188,6 +188,7 @@ def get_users_orders(db: Session, user_id: int):
         .all()
     )
 
+
 def get_order_by_id(db: Session, order_id: int, user_id: int):
     return (
         db.query(Order)
@@ -240,6 +241,7 @@ def change_order_status(
     db.refresh(db_order)
     return db_order
 
+
 def create_guest_order(db: Session, data: GuestOrder):
     if not data.items:
         return None
@@ -250,35 +252,32 @@ def create_guest_order(db: Session, data: GuestOrder):
         product = db.query(Product).filter(Product.id == item.product_id).first()
         if not (product and item.quantity <= product.stock):
             return None
-        order_item = OrderItem(product_id = product.id, product_name_snapshot = product.name, product_price = product.price, quantity = item.quantity)
+        order_item = OrderItem(
+            product_id=product.id,
+            product_name_snapshot=product.name,
+            product_price=product.price,
+            quantity=item.quantity,
+        )
         list_items.append(order_item)
         total_price += product.price * item.quantity
-        product.stock -= item.quantity 
-        
-    new_order = Order(contact_email=data.email,
-                     status = OrderStatus.pending,
-                     total_amount = total_price,
-                     )
-    
+        product.stock -= item.quantity
+
+    new_order = Order(
+        contact_email=data.email,
+        status=OrderStatus.pending,
+        total_amount=total_price,
+    )
+
     db.add(new_order)
     db.flush()
-    
+
     for order_item in list_items:
         order_item.order_id = new_order.id
         db.add(order_item)
-        
+
     new_shipment = Shipment(**data.shipping_data.model_dump())
     db.add(new_shipment)
-    
+
     db.commit()
     db.refresh(new_order)
     return new_order
-    
-       
-    
-        
-        
-        
-        
-
-   

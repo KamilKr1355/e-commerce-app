@@ -8,10 +8,11 @@ from src.products.schemas import (
     ProductUpdate,
     ProductImageCreate,
     ProductImageEdit,
-    DiscountCreate
+    DiscountCreate,
 )
 from decimal import Decimal
 from datetime import datetime
+
 
 def get_list_of_categories(db: Session):
     return db.query(Category).all()
@@ -96,7 +97,7 @@ def create_product(db: Session, new_product: ProductCreate):
 def update_product(db: Session, product_id: int, updated_product: ProductUpdate):
     db_product = db.query(Product).filter(Product.id == product_id).one()
     if update_product.price < db_product.price:
-        return {"error":"lower_price"}
+        return {"error": "lower_price"}
     if not db_product:
         return None
 
@@ -167,6 +168,7 @@ def edit_product_image(db: Session, image_id: int, image_data: ProductImageEdit)
     db.refresh(db_image)
     return db_image
 
+
 def add_discount(db: Session, id: int, discount_data: DiscountCreate):
     product = db.query(Product).filter(Product.id == id).first()
     if not product:
@@ -174,32 +176,43 @@ def add_discount(db: Session, id: int, discount_data: DiscountCreate):
     if discount_data.price >= product.price:
         return None
     now = datetime.now()
-    active_discount = db.query(Discount).filter(Discount.product_id == id, Discount.valid_from <= now,
-                                                or_(Discount.valid_until == None, Discount.valid_until > now)).first()
-    
+    active_discount = (
+        db.query(Discount)
+        .filter(
+            Discount.product_id == id,
+            Discount.valid_from <= now,
+            or_(Discount.valid_until == None, Discount.valid_until > now),
+        )
+        .first()
+    )
+
     if active_discount and (active_discount.valid_until > discount_data.valid_from):
         active_discount.valid_until = now()
 
-    discount = Discount(product_id = id, **discount_data.model_dump())
-    
+    discount = Discount(product_id=id, **discount_data.model_dump())
+
     db.add(discount)
     db.commit()
     db.refresh(discount)
-    
+
     return discount
-    
+
+
 def cancel_discount(db: Session, product_id: int):
     now = datetime.now()
-    active_discount = db.query(Discount).filter(
-        Discount.product_id == product_id,
-        Discount.valid_from <= now,
-        or_(Discount.valid_until == None, Discount.valid_until > now)
-    ).first()
+    active_discount = (
+        db.query(Discount)
+        .filter(
+            Discount.product_id == product_id,
+            Discount.valid_from <= now,
+            or_(Discount.valid_until == None, Discount.valid_until > now),
+        )
+        .first()
+    )
     if active_discount:
         active_discount.valid_until = datetime.now()
         db.commit()
         db.refresh(active_discount)
         return active_discount
-    
-    
+
     return None
