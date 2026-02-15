@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
+from datetime import datetime, timedelta
 from src.users.models import User
 from src.shopping.models import Cart, CartItem, Order, OrderItem
 from src.products.models import Product
@@ -7,6 +8,7 @@ from src.shopping.constants import OrderStatus
 from src.users.constants import Role
 from src.shopping.schemas import GuestOrder
 from src.logistics.models import Shipment
+
 
 
 def get_cart_for_user(db: Session, user_id: int):
@@ -226,7 +228,26 @@ def cancel_order(db: Session, order_id: int, user_id: int):
     db.refresh(db_order)
     return db_order
 
+def cancel_pending_orders(db: Session, time: int):
+    expired_limit = datetime.now() - timedelta(seconds=time)
+    db_orders = (
+        db.query(Order)
+        .options(joinedload(Order.items).joinedload(OrderItem.product))
+        .filter(Order.status == OrderStatus.pending,
+                Order.created_at < expired_limit)
+        .all()
+    )
+    if not db_orders:
+        return None
 
+    for order in db_orders:
+        for item in order.items:
+            if item.product:
+                item.product.stock += item.quantity
+
+        order.status = OrderStatus.cancelled
+    db.commit()
+    return {"status":"cancelled"}
 def change_order_status(
     db: Session, new_status: OrderStatus, order_id: int, user_id: int
 ):
