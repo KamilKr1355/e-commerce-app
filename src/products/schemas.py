@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from decimal import Decimal
+from datetime import datetime
 
 
 class BaseProduct(BaseModel):
     name: str
     description: Optional[str] = None
-    price: float
+    price: Decimal
     currency: Optional[str] = None
     stock: Optional[int] = None
     is_active: Optional[bool] = None
@@ -40,6 +42,8 @@ class ProductImageOut(ProductImageBase):
 class ProductOut(BaseProduct):
     id: int
     urls: Optional[List[ProductImageOut]] = []
+    current_price: Decimal
+    lowest_price_30_days: Decimal
 
     class Config:
         from_attributes = True
@@ -102,3 +106,17 @@ class ProductImageEdit(BaseModel):
 
     class Config:
         from_attributes = True
+
+def DiscountCreate(BaseModel):
+    price: Decimal
+    valid_until: datetime
+    valid_from: datetime
+    
+class DiscountOut(BaseModel):
+    id: int
+    product_id: int
+    new_price: int
+    created_at: datetime
+    valid_from: datetime
+    valid_until: datetime
+    is_active: bool

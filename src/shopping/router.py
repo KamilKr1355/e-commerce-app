@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from src.dependencies import get_db
 from src.users.models import User
 from typing import List
+from src.shopping.schemas import GuestOrder
+from src.shopping.service import create_guest_order
 from src.shopping.schemas import (
     CartBase,
     CartCreate,
@@ -223,6 +225,24 @@ def post_order_from_cart(
 
     return new_order
 
+@router.post(
+    "/order",
+    response_model=OrderOut,
+    status_code=status.HTTP_201_CREATED,
+    description="Creates order from cart",
+)
+def post_guest_order(
+    data: GuestOrder, db: Session = Depends(get_db)
+):
+
+    new_order = create_guest_order(db, data)
+
+    if not new_order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Error while placing order"
+        )
+
+    return new_order
 
 @router.get(
     "/orders",

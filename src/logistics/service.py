@@ -84,8 +84,8 @@ def payment_failed(db: Session, provider_payment_id: str):
 def get_paid_shippments(db: Session, date: datetime, limit: int):
     return (
         db.query(Shipment).join(Order).options(joinedload(Shipment.order).joinedload(Order.items).joinedload(OrderItem.product))
-        .filter(Order.status == OrderStatus.paid, Order.updated_at > date)
-        .order_by(Order.updated_at.asc()).limit(limit)
+        .filter(Order.status == OrderStatus.paid, Order.created_at > date)
+        .order_by(Order.created_at.asc()).limit(limit)
         .all()  
     )
 

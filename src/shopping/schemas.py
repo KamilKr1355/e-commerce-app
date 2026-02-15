@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 from typing import Optional
 from decimal import Decimal
 from typing import List
 from src.products.schemas import ProductOut
+from src.logistics.schemas import ShipmentCreate
 from src.shopping.constants import OrderStatus
 from enum import Enum
 
@@ -80,3 +81,13 @@ class IncrementDecrement(BaseModel):
 
 class OrderStatus(BaseModel):
     status: OrderStatus
+
+class GuestOrderItem(BaseModel):
+    product_id: int
+    quantity: int
+    
+class GuestOrder(BaseModel):
+    email: EmailStr
+    items: List[GuestOrderItem]
+    shipping_data: ShipmentCreate
+    

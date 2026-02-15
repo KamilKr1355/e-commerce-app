@@ -14,6 +14,8 @@ from src.products.schemas import (
     ProductImageCreate,
     ProductImageEdit,
     ProductImageOut,
+    DiscountCreate,
+    DiscountOut
 )
 from src.products.service import (
     get_list_of_categories,
@@ -32,6 +34,8 @@ from src.products.service import (
     delete_product_image,
     create_product_image,
     edit_product_image,
+    add_discount,
+    cancel_discount
 )
 from src.constants import user_required, admin_required, superadmin_required, allow_any
 from typing import List
@@ -222,6 +226,8 @@ def get_one_product(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"There is no product with id {product_id}",
         )
+        
+    product.views += 1
 
     return product
 
@@ -258,6 +264,12 @@ def edit_product(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Didn't manage to update a product",
+        )
+    
+    if isinstance(edited_product,dict) and edited_product["error"]=="lower_price":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="If you want to lower price, use discount"
         )
 
     return edited_product
@@ -377,3 +389,44 @@ def edit_image(
         )
 
     return edited_image
+
+@router.post(
+    "/product/{product_id}/discount",
+    response_model=DiscountOut,
+    status_code=status.HTTP_201_CREATED,
+    description="Creates discount",
+)
+def post_discount(
+    product_id: int,
+    discount_data: DiscountCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    new_discount = add_discount(db, product_id, **discount_data.model_dump())
+
+    if not new_discount:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Error while creating a discount"
+        )
+
+    return new_discount
+
+@router.delete(
+    "/product/{product_id}/discount",
+    response_model=StatusResponse,
+    description="Endpoint for deleting discount",
+)
+def del_discount(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+
+    deleted = cancel_discount(db, product_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Discount not found"
+        )
+
+    return {"status": "deleted"}

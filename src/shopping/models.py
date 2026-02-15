@@ -46,7 +46,8 @@ class Order(Base):
     __tablename__ = "order"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    contact_email = Column(String, nullable=True)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.pending)
     total_amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(5), nullable=False, default="PLN")
@@ -65,7 +66,7 @@ class OrderItem(Base):
     __tablename__ = "order_item"
 
     id = Column(Integer, primary_key=True)
-    order_id = Column(Integer, ForeignKey("order.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("order.id"), nullable=True)
     product_id = Column(Integer, ForeignKey("product.id"), nullable=False)
     product_name_snapshot = Column(String, nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
