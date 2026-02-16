@@ -41,7 +41,7 @@ class ProductImageOut(ProductImageBase):
 
 class ProductOut(BaseProduct):
     id: int
-    urls: Optional[List[ProductImageOut]] = []
+    images: Optional[List[ProductImageOut]] = []
     current_price: Decimal
     lowest_price_30_days: Decimal
 
