@@ -228,6 +228,7 @@ def get_one_product(
         )
 
     product.views += 1
+    db.commit()
 
     return product
 

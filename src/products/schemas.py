@@ -108,7 +108,7 @@ class ProductImageEdit(BaseModel):
         from_attributes = True
 
 
-def DiscountCreate(BaseModel):
+class DiscountCreate(BaseModel):
     price: Decimal
     valid_until: datetime
     valid_from: datetime

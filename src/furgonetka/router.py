@@ -31,9 +31,9 @@ def get_every_order(
 
 
 @router.post("/orders/{id}/tracking_number", status_code=status.HTTP_200_OK)
-def order_tracking(request: Tracking, background_tasks: BackgroundTasks, id: int, db: Session = Depends(get_db)):
+def order_tracking(request_data: Tracking, request: Request, background_tasks: BackgroundTasks, id: int, db: Session = Depends(get_db)):
     header = request.headers.get("Authorization")
-    shipment = order_status(db=db, authorization=header, id=id, **request.model_dump(), background_task=background_tasks)
+    shipment = order_status(db=db, authorization=header, id=id, **request_data.model_dump(), background_task=background_tasks)
 
     if shipment == "401":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)

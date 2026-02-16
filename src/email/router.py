@@ -7,7 +7,7 @@ router = APIRouter(prefix="/email", tags=["email"])
 
 @router.post("/register-code", response_model=Status, status_code=status.HTTP_201_CREATED)
 def send_code(request: CodeCreate, db: Session = Depends(get_db)):
-  status = send_register_code(db, receiver = request.models.dump()["email"])
+  status = send_register_code(db, email=request.email)
   if not status:
     raise HTTPException(status_code=404)
   return status

@@ -146,7 +146,7 @@ def total_price_of_cart(db: Session, user_id: int):
 
 def create_order_from_cart(db: Session, user_id: int, background_tasks: BackgroundTasks):
     cart = get_cart_for_user(db, user_id)
-    if not cart or cart.items:
+    if not cart or not cart.items:
         return None
 
     total_amount = sum(item.product.price * item.quantity for item in cart.items)

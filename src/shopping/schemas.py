@@ -31,7 +31,7 @@ class CartItemCreate(CartItemBase):
 
 class CartItemOut(CartItemBase):
     id: int
-    price_at_time: int
+    price_at_time: Decimal
     product: ProductOut
 
 

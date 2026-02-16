@@ -94,7 +94,7 @@ def get_list(
 
 
 @router.put("/ban/{email}", response_model=UserOut, status_code=status.HTTP_200_OK)
-def ban_user(
+def cancel_user(
     email: str, db: Session = Depends(get_db), current_user=Depends(admin_required)
 ):
     user = ban_user(db, email, current_user)

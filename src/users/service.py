@@ -7,7 +7,9 @@ from src.users.constants import Role
 
 
 def count_users(db: Session):
-    return db.execute(func.count(User).select(User)).first()
+    result = db.execute(select(func.count(User.id))).first()
+    users_count = result[0] if result else 0
+    return users_count
 
 
 def get_limitted_users_list(db: Session, offset: int = 0, limit: int = 50):

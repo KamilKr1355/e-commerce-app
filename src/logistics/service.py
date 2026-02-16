@@ -197,7 +197,7 @@ def handle_webhook_event(db: Session, webhook_data: WebhookCreate, background_ta
         order = db.query(Order).filter(Order.id == order_id).first()
     
         try:
-            email = order.shipment.shippment_email
+            email = order.shipment.shipping_email
             background_tasks.add_task(send_payment_success_email, order_id, email)
         except Exception as e:
             logging.error(f"error in paiment: {e}")

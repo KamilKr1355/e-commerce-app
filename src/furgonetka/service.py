@@ -90,6 +90,7 @@ def get_orders(db: Session, authorization: str, datetime: str, limit: int = 100)
                 "paymentDatetime": None,
             }
         )
+    return final_list
 
 
 def order_status(
