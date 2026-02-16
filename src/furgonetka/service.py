@@ -1,6 +1,6 @@
 from fastapi import Header, BackgroundTasks
 from sqlalchemy.orm import Session
-from src.logistics.service import get_paid_shippments
+from src.logistics.service import get_paid_shipments
 from datetime import datetime as dt
 from src.furgonetka.schemas import Tracking
 from src.logistics.models import Shipment
@@ -21,7 +21,7 @@ def get_orders(db: Session, authorization: str, datetime: str, limit: int = 100)
 
     datetime = dt.fromisoformat(datetime.replace("Z", "+00:00"))
 
-    shipments = get_paid_shippments(db, datetime, limit)
+    shipments = get_paid_shipments(db, datetime, limit)
     final_list = []
     for shipment in shipments:
         point_value = shipment.pickup_point_code if shipment.pickup_point_code else None

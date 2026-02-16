@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 router = APIRouter(prefix="/logistics", tags=["logistics"])
-ENDPOINT_SECRET = os.getenv("sk_stripe")
+ENDPOINT_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 
 @router.post("/payments", response_model=FinalizedPayment)

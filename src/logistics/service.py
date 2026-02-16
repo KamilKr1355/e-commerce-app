@@ -94,7 +94,7 @@ def payment_failed(db: Session, provider_payment_id: str):
     return db_payment
 
 
-def get_paid_shippments(db: Session, date: datetime, limit: int):
+def get_paid_shipments(db: Session, date: datetime, limit: int):
     return (
         db.query(Shipment)
         .join(Order)
@@ -200,7 +200,7 @@ def handle_webhook_event(db: Session, webhook_data: WebhookCreate, background_ta
             email = order.shipment.shipping_email
             background_tasks.add_task(send_payment_success_email, order_id, email)
         except Exception as e:
-            logging.error(f"error in paiment: {e}")
+            logging.error(f"error in payment: {e}")
       
         payment_intent_id = db_event.payload["data"]["object"]["id"]
         payment_succeed(db, payment_intent_id)
