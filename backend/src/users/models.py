@@ -48,6 +48,7 @@ class Addresses(Base):
     user = relationship("User", back_populates="addresses")
     
 class RegistrationCode(Base):
+    __tablename__ = "registration_code"
     id = Column(Integer, primary_key=True)
     email = Column(String, nullable=False)
     code = Column(String, nullable=True)
