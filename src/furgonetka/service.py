@@ -1,10 +1,11 @@
-from fastapi import Header
+from fastapi import Header, BackgroundTasks
 from sqlalchemy.orm import Session
 from src.logistics.service import get_paid_shippments
 from datetime import datetime as dt
 from src.furgonetka.schemas import Tracking
 from src.logistics.models import Shipment
 from src.shopping.models import Order
+from src.email.service import send_shipping_email
 import os
 from dotenv import load_dotenv
 
@@ -92,7 +93,7 @@ def get_orders(db: Session, authorization: str, datetime: str, limit: int = 100)
 
 
 def order_status(
-    db: Session, authorization: str, id: int, number: str, courierService: str
+    db: Session, authorization: str, id: int, number: str, courierService: str, background_task: BackgroundTasks
 ):
     if not authorization:
         return "401"
@@ -111,7 +112,9 @@ def order_status(
 
     shipment.tracking_number = number
 
+    
     db.commit()
     db.refresh(shipment)
+    background_task.add_task(send_shipping_email, order.id, number, shipment.courier.value, shipment.shipping_email)
 
     return shipment

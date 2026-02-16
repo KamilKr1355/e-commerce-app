@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 import asyncio
 import logging
 from contextlib import asynccontextmanager
@@ -8,11 +8,10 @@ from src.products.router import router as productRouter
 from src.shopping.router import router as shoppingRouter
 from src.logistics.router import router as logisticsRouter
 from src.furgonetka.router import router as furgonetkaRouter
+from src.admin.router import router as adminRouter
+from src.email.router import router as emailRouter
 from src.database import engine, Base, SessionLocal
-import src.shopping.models
-import src.products.models
-import src.logistics.models
-import src.users.models
+from src.email.service import delete_too_old
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,6 +21,7 @@ async def run_periodic_tasks(time: int):
     db = SessionLocal()
     try:
       cancel_pending_orders(db, time)
+      delete_too_old(db, time)
     except Exception as e:
       logger.error(f"Error in periodical tasks: {e}")
     finally:
@@ -45,3 +45,5 @@ app.include_router(router=productRouter)
 app.include_router(router=shoppingRouter)
 app.include_router(router=logisticsRouter)
 app.include_router(router=furgonetkaRouter)
+app.include_router(router=emailRouter)
+app.include_router(router=adminRouter)

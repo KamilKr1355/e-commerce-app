@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from src.dependencies import get_db
 from src.users.models import User
@@ -213,10 +213,10 @@ def get_cart_price(
     description="Creates order from cart",
 )
 def post_order_from_cart(
-    db: Session = Depends(get_db), current_user: User = Depends(user_required)
+    background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: User = Depends(user_required)
 ):
 
-    new_order = create_order_from_cart(db, current_user.id)
+    new_order = create_order_from_cart(db, current_user.id, background_tasks=background_tasks)
 
     if not new_order:
         raise HTTPException(

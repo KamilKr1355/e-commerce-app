@@ -1,8 +1,9 @@
-from fastapi import Depends
+from fastapi import Depends, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from src.logistics.schemas import PaymentCreate, ShipmentCreate, WebhookCreate
 from src.shopping.models import Order, OrderItem
 from src.logistics.models import Payment, Shipment, WebhookEvent
+from src.email.service import send_payment_success_email
 from src.logistics.constants import (
     Providers,
     PaymentMethod,
@@ -15,6 +16,11 @@ from datetime import datetime
 from src.logistics.stripe import create_checkout_session
 import os
 from dotenv import load_dotenv
+import logging
+
+logging.basicConfig(level=logging.ERROR)
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -172,7 +178,7 @@ def mark_webhook_as_processed(db: Session, event_id: str):
         db.commit()
 
 
-def handle_webhook_event(db: Session, webhook_data: WebhookCreate):
+def handle_webhook_event(db: Session, webhook_data: WebhookCreate, background_tasks: BackgroundTasks):
     existing_event = (
         db.query(WebhookEvent)
         .filter(WebhookEvent.event_id == webhook_data.event_id)
@@ -187,6 +193,15 @@ def handle_webhook_event(db: Session, webhook_data: WebhookCreate):
     db.refresh(db_event)
 
     if db_event.event_type == "checkout.session.completed":
+        order_id = payment_intent_id = db_event.payload["data"]["object"]["client_reference_id"]
+        order = db.query(Order).filter(Order.id == order_id).first()
+    
+        try:
+            email = order.shipment.shippment_email
+            background_tasks.add_task(send_payment_success_email, order_id, email)
+        except Exception as e:
+            logging.error(f"error in paiment: {e}")
+      
         payment_intent_id = db_event.payload["data"]["object"]["id"]
         payment_succeed(db, payment_intent_id)
         mark_webhook_as_processed(db, db_event.event_id)

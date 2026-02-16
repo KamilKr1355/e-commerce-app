@@ -1,3 +1,4 @@
+from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timedelta
 from src.users.models import User
@@ -8,6 +9,7 @@ from src.shopping.constants import OrderStatus
 from src.users.constants import Role
 from src.shopping.schemas import GuestOrder
 from src.logistics.models import Shipment
+from src.email.service import send_order_confirmation, send_order_cancelled_email
 
 
 
@@ -142,7 +144,7 @@ def total_price_of_cart(db: Session, user_id: int):
     return {"total_price": summed}
 
 
-def create_order_from_cart(db: Session, user_id: int):
+def create_order_from_cart(db: Session, user_id: int, background_tasks: BackgroundTasks):
     cart = get_cart_for_user(db, user_id)
     if not cart or cart.items:
         return None
@@ -176,6 +178,7 @@ def create_order_from_cart(db: Session, user_id: int):
             return None
 
     cart.items.clear()
+    background_tasks.add_task(send_order_confirmation, new_order, new_order.shipment.shipping_email)
 
     db.commit()
     db.refresh(new_order)
@@ -241,6 +244,7 @@ def cancel_pending_orders(db: Session, time: int):
         return None
 
     for order in db_orders:
+        send_order_cancelled_email(order.id, order.shipment.shipping_email)
         for item in order.items:
             if item.product:
                 item.product.stock += item.quantity

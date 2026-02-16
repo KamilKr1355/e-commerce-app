@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header, Depends, Request, status, HTTPException, Response
+from fastapi import APIRouter, Header, Depends, Request, status, HTTPException, Response, BackgroundTasks
 from src.dependencies import get_db
 from sqlalchemy.orm import Session
 from src.furgonetka.service import get_orders, order_status
@@ -31,9 +31,9 @@ def get_every_order(
 
 
 @router.post("/orders/{id}/tracking_number", status_code=status.HTTP_200_OK)
-def order_tracking(request: Tracking, id: int, db: Session = Depends(get_db)):
+def order_tracking(request: Tracking, background_tasks: BackgroundTasks, id: int, db: Session = Depends(get_db)):
     header = request.headers.get("Authorization")
-    shipment = order_status(db=db, authorization=header, id=id, **request.model_dump())
+    shipment = order_status(db=db, authorization=header, id=id, **request.model_dump(), background_task=background_tasks)
 
     if shipment == "401":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)

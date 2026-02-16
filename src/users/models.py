@@ -46,3 +46,9 @@ class Addresses(Base):
     phone = Column(String, nullable=False)
 
     user = relationship("User", back_populates="addresses")
+    
+class RegistrationCode(Base):
+    id = Column(Integer, primary_key=True)
+    email = Column(String, nullable=False)
+    code = Column(String, nullable=True)
+    created_at = Column(DateTime, server_default=text("now()"))

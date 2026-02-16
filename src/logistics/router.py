@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from src.dependencies import get_db
@@ -74,7 +74,7 @@ def get_order_shipment(
 
 
 @router.post("/webhooks/stripe")
-async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+async def stripe_webhook(background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
@@ -93,6 +93,6 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         provider="stripe", event_id=event["id"], event_type=event["type"], payload=event
     )
 
-    handle_webhook_event(db, webhook_data)
+    handle_webhook_event(db, webhook_data, background_tasks)
 
     return {"status": "received"}
