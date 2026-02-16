@@ -162,6 +162,12 @@ def create_order_from_cart(db: Session, user_id: int, background_tasks: Backgrou
     db.flush()
 
     for cart_item in cart.items:
+        product = (db.query(Product).with_for_update().
+        filter(Product.id == cart_item.product_id).first()
+        )
+        if not product or product.stock < cart_item.quantity:
+            db.rollback()
+            return None
         order_item = OrderItem(
             order_id=new_order.id,
             product_id=cart_item.product.id,
@@ -171,12 +177,8 @@ def create_order_from_cart(db: Session, user_id: int, background_tasks: Backgrou
         )
         db.add(order_item)
 
-        if cart_item.product.stock >= cart_item.quantity:
-            cart_item.product.stock -= cart_item.quantity
-        else:
-            db.rollback()
-            return None
-
+        cart_item.product.stock -= cart_item.quantity
+        
     cart.items.clear()
     background_tasks.add_task(send_order_confirmation, new_order, new_order.shipment.shipping_email)
 
@@ -274,17 +276,21 @@ def create_guest_order(db: Session, data: GuestOrder):
     total_price = 0
     list_items = []
     for item in data.items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        if not (product and item.quantity <= product.stock):
+        product = (db.query(Product).with_for_update().
+        filter(Product.id == item.product_id).first()
+        )
+        if not product or product.stock < item.quantity:
+            db.rollback()
             return None
+
         order_item = OrderItem(
             product_id=product.id,
             product_name_snapshot=product.name,
-            product_price=product.price,
+            product_price=product.current_price,
             quantity=item.quantity,
         )
         list_items.append(order_item)
-        total_price += product.price * item.quantity
+        total_price += product.current_price * item.quantity
         product.stock -= item.quantity
 
     new_order = Order(
@@ -300,6 +306,8 @@ def create_guest_order(db: Session, data: GuestOrder):
         order_item.order_id = new_order.id
         db.add(order_item)
 
+    shipment_data = data.shipping_data.model_dump()
+    shipment_data["order_id"] = new_order.id
     new_shipment = Shipment(**data.shipping_data.model_dump())
     db.add(new_shipment)
 
