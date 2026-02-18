@@ -4,6 +4,7 @@ from typing import List
 from src.dependencies import get_db
 from src.users.models import User
 from src.logistics.models import Shipment
+from typing import Optional
 from src.constants import admin_required, allow_any, user_required
 from src.logistics.schemas import (
     PaymentOut,
@@ -22,6 +23,7 @@ from src.logistics.service import (
     payment_succeed,
     payment_failed,
 )
+from src.auth.token import get_optional_current_user 
 import stripe
 import os
 from dotenv import load_dotenv
@@ -36,12 +38,15 @@ ENDPOINT_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 def create_payment(
     request: PaymentCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(user_required),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    payment, url = initiate_payment(db, request, current_user.id)
+    u_id = current_user.id if current_user else None
+    payment, url = initiate_payment(db, request, u_id)
+    
     if not payment:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Could not initiate payment"
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Cannot initalize payment for this order"
         )
     return {"payment": payment, "url": url}
 

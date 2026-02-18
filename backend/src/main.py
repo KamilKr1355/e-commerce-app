@@ -14,6 +14,7 @@ from src.admin.router import router as adminRouter
 from src.email.router import router as emailRouter
 from src.database import engine, Base, SessionLocal
 from src.email.service import delete_too_old
+from src.users.service import create_superadmin_if_not_exists
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,7 +34,12 @@ async def run_periodic_tasks(time: int):
     
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+  db = SessionLocal()
   task = asyncio.create_task(run_periodic_tasks(1200))
+  try:
+        create_superadmin_if_not_exists(db)
+  finally:
+      db.close()
   
   yield
   

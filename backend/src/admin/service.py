@@ -9,15 +9,15 @@ def get_admin_dashboard_stats(db: Session):
         func.sum(Order.total_amount).label("total_revenue"),
         func.avg(Order.total_amount).label("aov"),
         func.count(Order.id).label("order_count")
-    ).filter(Order.status.in_([OrderStatus.paid, OrderStatus.completed])).first()
+    ).filter(Order.status.in_([OrderStatus.paid, OrderStatus.shipped])).first()
 
-    total_revenue = float(stats.total_revenue or 0)
-    aov = float(stats.aov or 0)
+    total_revenue = float(stats[0] or 0) if stats else 0
+    aov = float(stats[1] or 0) if stats else 0
 
     revenue_history = db.query(
         cast(Order.created_at, Date).label("day"),
         func.sum(Order.total_amount).label("daily_sum")
-    ).filter(Order.status.in_([OrderStatus.paid, OrderStatus.completed])) \
+    ).filter(Order.status.in_([OrderStatus.paid, OrderStatus.shipped])) \
      .group_by("day") \
      .order_by("day") \
      .all()
@@ -30,7 +30,7 @@ def get_admin_dashboard_stats(db: Session):
     profitable_products = db.query(
         OrderItem.product_name_snapshot.label("name"),
         func.sum(OrderItem.price * OrderItem.quantity).label("profit")
-    ).join(Order).filter(Order.status.in_([OrderStatus.paid, OrderStatus.completed])) \
+    ).join(Order).filter(Order.status.in_([OrderStatus.paid, OrderStatus.shipped])) \
      .group_by(OrderItem.product_name_snapshot) \
      .order_by(desc("profit")) \
      .limit(5).all()
@@ -46,7 +46,7 @@ def get_admin_dashboard_stats(db: Session):
         func.sum(OrderItem.quantity).label("sold_qty")
     ).join(OrderItem, Product.id == OrderItem.product_id) \
      .join(Order, Order.id == OrderItem.order_id) \
-     .filter(Order.status.in_([OrderStatus.paid, OrderStatus.completed])) \
+     .filter(Order.status.in_([OrderStatus.paid, OrderStatus.shipped])) \
      .group_by(Product.id) \
      .all()
 

@@ -45,7 +45,7 @@ class Price(BaseModel):
 
 
 class OrderBase(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
 
 
 class OrderCreate(BaseModel):

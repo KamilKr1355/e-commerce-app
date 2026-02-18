@@ -43,12 +43,13 @@ class FinalizedPayment(BaseModel):
 
 
 class ShipmentCreate(BaseModel):
-    order_id: int
+    order_id: Optional[int] = None
     courier: Courier
     delivery_type: DeliveryType
     shipping_full_name: str
     shipping_street: str
     shipping_city: str
+    shipping_email: Optional[str] = None
     shipping_postal_code: str
     shipping_country: str
     shipping_phone: str

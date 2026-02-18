@@ -177,10 +177,11 @@ def create_order_from_cart(db: Session, user_id: int, background_tasks: Backgrou
         )
         db.add(order_item)
 
-        cart_item.product.stock -= cart_item.quantity
+        product.stock -= cart_item.quantity
         
     cart.items.clear()
-    background_tasks.add_task(send_order_confirmation, new_order, new_order.shipment.shipping_email)
+    recipient_email = new_order.user.email
+    background_tasks.add_task(send_order_confirmation, new_order, email = new_order.user.email)
 
     db.commit()
     db.refresh(new_order)
@@ -237,7 +238,11 @@ def cancel_pending_orders(db: Session, time: int):
     expired_limit = datetime.now() - timedelta(seconds=time)
     db_orders = (
         db.query(Order)
-        .options(joinedload(Order.items).joinedload(OrderItem.product))
+        .options(
+            joinedload(Order.items).joinedload(OrderItem.product),
+            joinedload(Order.shipment),
+            joinedload(Order.user)
+        )
         .filter(Order.status == OrderStatus.pending,
                 Order.created_at < expired_limit)
         .all()
@@ -246,12 +251,26 @@ def cancel_pending_orders(db: Session, time: int):
         return None
 
     for order in db_orders:
-        send_order_cancelled_email(order.id, order.shipment.shipping_email)
+        email = None
+        if order.shipment:
+            email = order.shipment.shipping_email
+        elif order.contact_email:
+            email = order.contact_email
+        elif order.user:
+            email = order.user.email
+
+        if email:
+            try:
+                send_order_cancelled_email(order.id, email)
+            except Exception:
+                pass
+
         for item in order.items:
             if item.product:
                 item.product.stock += item.quantity
 
         order.status = OrderStatus.cancelled
+        
     db.commit()
     return {"status":"cancelled"}
 def change_order_status(
@@ -269,24 +288,22 @@ def change_order_status(
     return db_order
 
 
-def create_guest_order(db: Session, data: GuestOrder):
+def create_guest_order(db: Session, data: GuestOrder, background_tasks: BackgroundTasks):
     if not data.items:
         return None
 
     total_price = 0
     list_items = []
     for item in data.items:
-        product = (db.query(Product).with_for_update().
-        filter(Product.id == item.product_id).first()
-        )
-        if not product or product.stock < item.quantity:
+        product = db.query(Product).with_for_update().filter(Product.id == item.product_id).first()
+        if not (product and item.quantity <= product.stock):
             db.rollback()
             return None
-
+        
         order_item = OrderItem(
             product_id=product.id,
             product_name_snapshot=product.name,
-            product_price=product.current_price,
+            price=product.current_price,
             quantity=item.quantity,
         )
         list_items.append(order_item)
@@ -297,6 +314,7 @@ def create_guest_order(db: Session, data: GuestOrder):
         contact_email=data.email,
         status=OrderStatus.pending,
         total_amount=total_price,
+        currency="PLN"
     )
 
     db.add(new_order)
@@ -306,11 +324,15 @@ def create_guest_order(db: Session, data: GuestOrder):
         order_item.order_id = new_order.id
         db.add(order_item)
 
-    shipment_data = data.shipping_data.model_dump()
-    shipment_data["order_id"] = new_order.id
-    new_shipment = Shipment(**data.shipping_data.model_dump())
+    shipment_dict = data.shipping_data.model_dump()
+    shipment_dict["order_id"] = new_order.id
+    
+    shipment_dict["shipping_email"] = data.email 
+    
+    new_shipment = Shipment(**shipment_dict)
     db.add(new_shipment)
 
+    background_tasks.add_task(send_order_confirmation, new_order, data.email)
     db.commit()
     db.refresh(new_order)
     return new_order

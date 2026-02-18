@@ -4,7 +4,10 @@ from src.users.models import User
 from src.shopping.models import Order, OrderItem, OrderStatus
 from src.auth.hasher import get_password_hash, verify_password
 from src.users.constants import Role
-
+from src.users.models import User
+from src.users.constants import Role
+from src.auth.hasher import get_password_hash
+import os
 
 def count_users(db: Session):
     result = db.execute(select(func.count(User.id))).first()
@@ -13,10 +16,13 @@ def count_users(db: Session):
 
 
 def get_limitted_users_list(db: Session, offset: int = 0, limit: int = 50):
-    paginated_list = db.execute(select(User).offset(offset).limit(limit)).all()
-    users_count = count_users()
-    additional_page = 1 if (users_count - (users_count // limit) * limit) > 0 else 0
-    total_pages = users_count // limit + additional_page
+    query = select(User).offset(offset).limit(limit)
+    paginated_list = db.execute(query).scalars().all()
+    
+    users_count_result = db.execute(select(func.count(User.id))).first()
+    users_count = users_count_result[0] if users_count_result else 0
+    
+    total_pages = (users_count + limit - 1) // limit if limit > 0 else 1
 
     return {
         "items": paginated_list,
@@ -25,7 +31,6 @@ def get_limitted_users_list(db: Session, offset: int = 0, limit: int = 50):
         "limit": limit,
         "total_pages": total_pages,
     }
-
 
 def ban_user(db: Session, email: str, current_user: User):
     user = db.query(User).filter(User.email == email).first()
@@ -126,3 +131,21 @@ def upgrade_user(db: Session, email: str, current_user: User):
 
 def downgrade_user(db: Session, email: str, current_user: User):
     return change_role(db,email, current_user, False)
+
+def create_superadmin_if_not_exists(db: Session):
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@cardsino.pl")
+    admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+
+    existing_admin = db.query(User).filter(User.role == Role.superadmin).first()
+    
+    if not existing_admin:
+        hashed_pw = get_password_hash(admin_password)
+        new_admin = User(
+            email=admin_email,
+            hashed_password=hashed_pw,
+            role=Role.superadmin,
+            is_active=True
+        )
+        db.add(new_admin)
+        db.commit()
+        db.refresh(new_admin)

@@ -28,6 +28,7 @@ class UserOut(User):
 
 class UserDetails(BaseModel):
     id: int
+    email: EmailStr
     role: Role
     created_at: datetime
     orders: List[OrderOut]

@@ -23,11 +23,12 @@ from src.users.service import (
 from src.dependencies import get_db
 from src.auth.authenticate import get_user, authenticate_user
 from src.auth.hasher import get_password_hash
-from src.auth.token import create_access_token
+from src.auth.token import create_access_token, get_current_user
 from src.users.models import User
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from src.constants import allow_any, user_required, admin_required, superadmin_required
+
 
 router = APIRouter(prefix="/user", tags=["users"])
 
@@ -78,11 +79,9 @@ def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get(
-    "/paginated-list", response_model=PaginatedListOut, status_code=status.HTTP_200_OK
-)
+@router.get("/paginated-list", response_model=PaginatedListOut, status_code=status.HTTP_200_OK)
 def get_list(
-    request: PaginatedListCreate,
+    request: PaginatedListCreate = Depends(),
     db: Session = Depends(get_db),
     current_user=Depends(admin_required),
 ):
@@ -118,7 +117,7 @@ def get_details(
 
 
 @router.get("/my-details", response_model=UserDetails, status_code=status.HTTP_200_OK)
-def get_my_details(db: Session = Depends(get_db), current_user=Depends(user_required)):
+def get_my_details(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     user = my_account_detail(db, current_user.id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

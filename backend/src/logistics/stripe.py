@@ -33,8 +33,8 @@ def create_checkout_session(db: Session, order: Order):
         session = stripe.checkout.Session.create(
             line_items=line_items,
             mode="payment",
-            success_url="http://localhost:8000/success",
-            cancel_url="http://localhost:8000/cancel",
+            success_url="http://localhost:3000/success",
+            cancel_url="http://localhost:3000/cancel",
             client_reference_id=str(data.id),
             metadata={"order_id": data.id},
         )

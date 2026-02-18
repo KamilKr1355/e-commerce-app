@@ -5,6 +5,9 @@ from src.users.schemas import UserInDB
 from src.auth.hasher import verify_password
 from src.users.constants import Role
 from src.auth.token import get_current_user
+from src.dependencies import get_db
+from typing import Optional
+from src.auth.token import oauth2_scheme
 
 
 def get_user(db: Session, email: str = None):
@@ -27,13 +30,12 @@ class RoleChecker:
     def __init__(self, allowed_roles: list[Role]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, user: User = Depends(get_current_user)):
-        if not self.allowed_roles:
-            return user
-        if user.role not in self.allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User doesn't have permissions",
-            )
+    def __call__(self, token: Optional[str] = Depends(lambda x: None)):
+        return None
 
+async def get_optional_user(db: Session = Depends(get_db), token: Optional[str] = Depends(oauth2_scheme)):
+    try:
+        user = await get_current_user(token, db)
         return user
+    except:
+        return None

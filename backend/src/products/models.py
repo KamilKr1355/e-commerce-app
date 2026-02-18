@@ -64,7 +64,7 @@ class Product(Base):
         return self.price
 
     @property
-    def lowest_price_30days(self):
+    def lowest_price_30_days(self):
         thirty_days_ago = datetime.now() - timedelta(days=30)
 
         prices = [self.price]
@@ -86,7 +86,7 @@ class Discount(Base):
     valid_from = Column(DateTime, nullable=False, server_default=text("now()"))
     valid_until = Column(DateTime, nullable=True)
 
-    product = relationship("Product", uselist=False, back_populates="discount")
+    product = relationship("Product", uselist=False, back_populates="discounts")
 
     @property
     def is_active(self):

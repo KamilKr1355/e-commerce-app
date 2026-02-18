@@ -54,7 +54,7 @@ router = APIRouter(prefix="/shop", tags=["products"])
     description="Returns list of categories (without products assigned) ",
 )
 def get_categories(
-    db: Session = Depends(get_db), current_user: User = Depends(allow_any)
+    db: Session = Depends(get_db)
 ):
     categories = get_list_of_categories(db)
 
@@ -73,7 +73,7 @@ def get_categories(
     description="Returns list of categories including products assigned",
 )
 def get_categories_products(
-    db: Session = Depends(get_db), current_user: User = Depends(allow_any)
+    db: Session = Depends(get_db)
 ):
     categories_products = get_all_categories_with_products(db)
 
@@ -94,7 +94,6 @@ def get_categories_products(
 def get_category(
     category_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(allow_any),
 ):
     category = get_single_category(db, category_id)
 
@@ -108,7 +107,7 @@ def get_category(
 
 
 @router.post(
-    "/categories",
+    "/category",
     response_model=CategoryOut,
     status_code=status.HTTP_201_CREATED,
     description="Endpoint for creating category",
@@ -179,7 +178,7 @@ def del_category(
     description="Returns every single product in db",
 )
 def get_every_product(
-    db: Session = Depends(get_db), current_user: User = Depends(allow_any)
+    db: Session = Depends(get_db)
 ):
     products = get_all_products(db)
 
@@ -199,7 +198,6 @@ def get_every_product(
 def get_every_product_from_category(
     category_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(allow_any),
 ):
     products = get_all_products_from_category(db, category_id)
 
@@ -217,7 +215,6 @@ def get_every_product_from_category(
 def get_one_product(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(allow_any),
 ):
     product = get_single_product(db, product_id)
 
@@ -306,8 +303,7 @@ def del_product(
 )
 def get_every_product_image(
     product_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(allow_any),
+    db: Session = Depends(get_db)
 ):
     images = get_all_product_images_for_product(product_id, db)
 
